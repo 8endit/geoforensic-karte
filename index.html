@@ -145,9 +145,6 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
   background:var(--panel);backdrop-filter:blur(16px);border:1px solid var(--border);
   border-radius:6px;padding:4px 12px;pointer-events:none;opacity:0;transition:opacity .3s}
 
-/* ---- Pulse animation for extreme points ---- */
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,71,87,.4)}70%{box-shadow:0 0 0 12px rgba(255,71,87,0)}100%{box-shadow:0 0 0 0 rgba(255,71,87,0)}}
-
 /* ---- Loading ---- */
 #loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;
   align-items:center;justify-content:center;transition:opacity .6s}
@@ -188,7 +185,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
     <div class="kpi-chip"><span class="v cy" id="k-pts">—</span><span class="l">Messpunkte</span></div>
     <div class="kpi-chip"><span class="v rd" id="k-max">—</span><span class="l">Max mm/a</span></div>
     <div class="kpi-chip"><span class="v cy" id="k-reg">—</span><span class="l">Regionen</span></div>
-    <div class="kpi-chip"><span class="v cy" id="k-worst">—</span><span class="l">Worst mm/a</span></div>
+    <div class="kpi-chip"><span class="v" id="k-med" style="color:var(--ora)">—</span><span class="l">Median</span></div>
   </div>
 </div>
 
@@ -300,8 +297,8 @@ function drawPts(){
   let vis=_filtCache.filter(p=>p.la>=s&&p.la<=n&&p.lo>=w&&p.lo<=e);
   // Subsample if too many points in view
   if(vis.length>MAX_MARKERS){
-    const step=Math.ceil(vis.length/MAX_MARKERS);
-    vis=vis.filter((_,i)=>i%step===0);
+    vis.sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
+    vis=vis.slice(0,MAX_MARKERS);
   }
   vis.forEach(p=>{
     const m=L.circleMarker([p.la,p.lo],{radius:vr(p.v),color:vc(p.v),fillColor:vc(p.v),
@@ -349,8 +346,9 @@ function updKPI(){
   document.getElementById('k-max').textContent=m.toFixed(1);
   const visRegions=regSet.size;
   animNum(document.getElementById('k-reg'),visRegions);
-  const worst=m.toFixed(1);
-  document.getElementById('k-worst').textContent=worst;
+  // Median velocity
+  if(f.length){const sv=f.map(p=>Math.abs(p.v)).sort((a,b)=>a-b);document.getElementById('k-med').textContent=sv[Math.floor(sv.length/2)].toFixed(1)}
+  else{document.getElementById('k-med').textContent='—'}
   const share=Math.round((f.length/Math.max(P.length,1))*100);
   const fs=document.getElementById('filter-summary');
   if(fs)fs.textContent=f.length.toLocaleString('de-DE')+' Punkte in '+visRegions+' Regionen sichtbar ('+share+'% des Datensatzes)';
@@ -372,7 +370,7 @@ function drawHist(){
     else if(a<30)bins[3]++;else if(a<50)bins[4]++;else bins[5]++});
   if(hc)hc.destroy();
   hc=new Chart(document.getElementById('hchart'),{type:'bar',
-    data:{labels:lb,datasets:[{data:bins,backgroundColor:['#22d3ee','#eab308','#f97316','#ef4444','#dc2626','#991b1b'],
+    data:{labels:lb,datasets:[{data:bins,backgroundColor:['#eab308','#f97316','#ef4444','#dc2626','#991b1b','#7f1d1d'],
       borderWidth:0,borderRadius:4,barThickness:16}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
@@ -429,7 +427,8 @@ document.getElementById('search').addEventListener('input',function(){
         const la=+d[0].lat,lo=+d[0].lon;map.flyTo([la,lo],12,{duration:1.2});
         let mn=Infinity,nr=null;
         const sp=_filtCache.length?_filtCache:P;
-        sp.forEach(p=>{const dd=Math.sqrt((p.la-la)**2+(p.lo-lo)**2)*111;if(dd<mn){mn=dd;nr=p}});
+        const cosLat=Math.cos(la*Math.PI/180);
+        sp.forEach(p=>{const dlat=(p.la-la)*111,dlon=(p.lo-lo)*111*cosLat;const dd=Math.sqrt(dlat*dlat+dlon*dlon);if(dd<mn){mn=dd;nr=p}});
         document.getElementById('search-res').innerHTML=nr&&mn<80
           ?'&#8594; '+nr.v.toFixed(1)+' mm/a ('+mn.toFixed(1)+' km entfernt)'
           :d[0].display_name.split(',').slice(0,2).join(',');
