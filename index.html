@@ -112,7 +112,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
   border-radius:10px!important;padding:14px 16px!important;color:var(--txt)}
 .legend-ctrl h4{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin:0 0 8px;font-family:var(--sans)}
 .grad{width:160px;height:8px;border-radius:4px;
-  background:linear-gradient(90deg,#3b82f6 0%,#22d3ee 20%,#eab308 45%,#f97316 65%,#ef4444 85%,#dc2626 100%)}
+  background:linear-gradient(90deg,#22d3ee 0%,#eab308 30%,#f97316 55%,#ef4444 75%,#dc2626 100%)}
 .grad-l{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:4px}
 
 /* ---- Popup ---- */
@@ -365,7 +365,7 @@ function updKPI(){
 
 // Histogram
 function drawHist(){
-  const f=_filtCache.length?_filtCache:filt(),bins=[0,0,0,0,0,0],lb=['5-8','8-12','12-20','20-30','30-50','50+'];
+  const f=_filtCache.length?_filtCache:filt(),bins=[0,0,0,0,0,0],lb=[vMin+'-8','8-12','12-20','20-30','30-50','50+'];
   f.forEach(p=>{const a=Math.abs(p.v);if(a<8)bins[0]++;else if(a<12)bins[1]++;else if(a<20)bins[2]++;
     else if(a<30)bins[3]++;else if(a<50)bins[4]++;else bins[5]++});
   if(hc)hc.destroy();
