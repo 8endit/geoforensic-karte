@@ -156,6 +156,39 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 #filter-summary{margin-top:10px;padding:8px 10px;border:1px solid rgba(154,176,198,.2);border-radius:9px;
   background:rgba(255,255,255,.02);font-size:11px;color:#d3dce8}
 #story-hint{margin-top:8px;font-size:11px;line-height:1.45;color:#aeb9ca}
+
+#mob-handle{display:none}
+/* ---- Mobile ---- */
+@media(max-width:768px){
+  body{overflow:auto;height:100vh}
+  #topbar{height:auto;flex-wrap:wrap;padding:10px 12px;gap:8px}
+  #topbar .title-wrap{display:none}
+  .kpi-strip{gap:4px;width:100%;justify-content:space-between;order:2}
+  .kpi-chip{min-width:0;flex:1;padding:6px 4px}
+  .kpi-chip .v{font-size:13px}
+  .kpi-chip .l{font-size:7px;letter-spacing:.8px}
+
+  #lpanel,#lpanel.collapsed{position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;width:100%!important;
+    height:50vh;z-index:100;flex-direction:column;gap:0;
+    border-radius:18px 18px 0 0;overflow:hidden;
+    transform:translateY(calc(100% - 48px))!important;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+  #lpanel.mob-open,#lpanel.mob-open.collapsed{transform:translateY(0)!important}
+
+  #mob-handle{display:flex;align-items:center;justify-content:center;
+    height:48px;cursor:pointer;flex-shrink:0;
+    background:linear-gradient(180deg,rgba(11,17,26,.95),rgba(8,13,20,.9));
+    border-bottom:1px solid var(--border)}
+  #mob-handle .pill{width:36px;height:4px;border-radius:2px;background:rgba(154,176,198,.4)}
+
+  #lpanel .glass{border-radius:0;border-left:none;border-right:none;box-shadow:none}
+  #lpanel .glass:first-child{border-top:none}
+  .panel-body{max-height:200px}
+
+  #bpanel{display:none}
+  #tog-left,#tog-bottom{display:none!important}
+  #coords{display:none}
+  .legend-ctrl{display:none!important}
+}
 </style>
 </head><body>
 
@@ -188,6 +221,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 
 <!-- Left panel -->
 <div id="lpanel">
+  <div id="mob-handle" onclick="document.getElementById('lpanel').classList.toggle('mob-open')"><div class="pill"></div></div>
   <!-- Search -->
   <div class="glass">
     <div style="padding:14px 16px">
