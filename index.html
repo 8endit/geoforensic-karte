@@ -251,7 +251,7 @@ body{background:radial-gradient(1200px 700px at 72% 120%,rgba(61,214,198,.11),tr
       <h3>Velocity Filter</h3><span class="arrow">&#9660;</span>
     </div>
     <div class="panel-body range-wrap">
-      <div class="range-row"><label>Min</label><input type="range" id="rng-min" min="3" max="130" value="3"><span class="rv" id="rv-min">3</span></div>
+      <div class="range-row"><label>Min</label><input type="range" id="rng-min" min="3" max="130" value="5"><span class="rv" id="rv-min">5</span></div>
       <div class="range-row"><label>Max</label><input type="range" id="rng-max" min="3" max="130" value="130"><span class="rv" id="rv-max">130</span></div>
       <div id="filter-summary">Lade Sichtbarkeitszusammenfassung ...</div>
       <div id="story-hint"></div>
@@ -298,7 +298,7 @@ function unpackMapData(d){
 }
 let P=[],R=[];
 let TOTAL_INFRA=0;
-let aReg=new Set(),vMin=3,vMax=130;
+let aReg=new Set(),vMin=5,vMax=130;
 
 // -- Map --
 const map=L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,renderer:L.canvas({padding:0.5})}).setView([51.1,10.3],6);
@@ -312,6 +312,7 @@ map.on('mousemove',e=>{
   c.style.opacity='1';
 });
 map.on('mouseout',()=>document.getElementById('coords').style.opacity='0');
+map.on('moveend',()=>{drawPts()});
 
 // Legend
 const lg=L.control({position:'bottomright'});
@@ -327,17 +328,26 @@ function vr(v){return Math.min(9,Math.max(3,Math.abs(v)/2.5))}
 let ptL=L.layerGroup().addTo(map),htL=null,hc=null;
 const filt=()=>P.filter(p=>aReg.has(p.r)&&Math.abs(p.v)>=vMin&&Math.abs(p.v)<=vMax);
 
+let _filtCache=[];
 function drawPts(){
   ptL.clearLayers();
-  filt().forEach(p=>{
-    let ih='';
-    if(p.i&&p.i.length){ih='<ul class="p-infra">'+p.i.map(x=>'<li><span class="it">'+x.t+'</span> '+
-      (x.n||'unbenannt')+' <span style="color:var(--dim)">('+x.d+'m)</span></li>').join('')+'</ul>'}
-    const pp='<div class="p-vel" style="color:'+vc(p.v)+'">'+(p.v>0?'+':'')+p.v.toFixed(1)+' mm/a</div>'
-      +'<div class="p-sub">'+p.la.toFixed(4)+' N, '+p.lo.toFixed(4)+' E</div>'
-      +'<div class="p-reg">'+p.r+'</div>'+ih;
-    L.circleMarker([p.la,p.lo],{radius:vr(p.v),color:vc(p.v),fillColor:vc(p.v),
-      fillOpacity:.8,weight:1.5,opacity:1}).bindPopup(pp,{maxWidth:280}).addTo(ptL);
+  _filtCache=filt();
+  const b=map.getBounds(),pad=0.05;
+  const s=b.getSouth()-pad,n=b.getNorth()+pad,w=b.getWest()-pad,e=b.getEast()+pad;
+  const vis=_filtCache.filter(p=>p.la>=s&&p.la<=n&&p.lo>=w&&p.lo<=e);
+  vis.forEach(p=>{
+    const m=L.circleMarker([p.la,p.lo],{radius:vr(p.v),color:vc(p.v),fillColor:vc(p.v),
+      fillOpacity:.8,weight:1.5,opacity:1});
+    m.on('click',()=>{
+      let ih='';
+      if(p.i&&p.i.length){ih='<ul class="p-infra">'+p.i.map(x=>'<li><span class="it">'+x.t+'</span> '+
+        (x.n||'unbenannt')+' <span style="color:var(--dim)">('+x.d+'m)</span></li>').join('')+'</ul>'}
+      const pp='<div class="p-vel" style="color:'+vc(p.v)+'">'+(p.v>0?'+':'')+p.v.toFixed(1)+' mm/a</div>'
+        +'<div class="p-sub">'+p.la.toFixed(4)+' N, '+p.lo.toFixed(4)+' E</div>'
+        +'<div class="p-reg">'+p.r+'</div>'+ih;
+      m.bindPopup(pp,{maxWidth:280}).openPopup();
+    });
+    m.addTo(ptL);
   });
 }
 
