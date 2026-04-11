@@ -1,28 +1,10 @@
 {
   "total_critical_points": 169844,
-  "total_regions_scanned": 18,
+  "total_regions_scanned": 16,
   "mean_velocity": -5.72,
   "max_subsidence": -162.7,
   "max_uplift": 66.3,
   "region_ranking": [
-    {
-      "region": "Brandenburg",
-      "n_points": 26100,
-      "mean_velocity": -5.26,
-      "max_subsidence": -162.7
-    },
-    {
-      "region": "Niedersachsen",
-      "n_points": 34339,
-      "mean_velocity": -3.58,
-      "max_subsidence": -120.7
-    },
-    {
-      "region": "Sachsen-Anhalt",
-      "n_points": 6847,
-      "mean_velocity": -5.38,
-      "max_subsidence": -112.1
-    },
     {
       "region": "Rheinland-Pfalz",
       "n_points": 27536,
@@ -36,10 +18,46 @@
       "max_subsidence": -89.6
     },
     {
+      "region": "Sachsen-Anhalt",
+      "n_points": 6947,
+      "mean_velocity": -5.37,
+      "max_subsidence": -112.1
+    },
+    {
+      "region": "Brandenburg",
+      "n_points": 26812,
+      "mean_velocity": -5.25,
+      "max_subsidence": -162.7
+    },
+    {
       "region": "Thueringen",
-      "n_points": 7208,
-      "mean_velocity": -4.68,
+      "n_points": 7393,
+      "mean_velocity": -4.67,
       "max_subsidence": -81.3
+    },
+    {
+      "region": "Hessen",
+      "n_points": 11768,
+      "mean_velocity": -4.02,
+      "max_subsidence": 66.3
+    },
+    {
+      "region": "Bremen",
+      "n_points": 1155,
+      "mean_velocity": -4.02,
+      "max_subsidence": -30.6
+    },
+    {
+      "region": "Schleswig-Holstein",
+      "n_points": 6564,
+      "mean_velocity": -4.02,
+      "max_subsidence": -63.1
+    },
+    {
+      "region": "Hamburg",
+      "n_points": 1873,
+      "mean_velocity": -3.99,
+      "max_subsidence": -27.6
     },
     {
       "region": "Baden-Wuerttemberg",
@@ -48,34 +66,22 @@
       "max_subsidence": -78.0
     },
     {
-      "region": "Mecklenburg-Vorpommern",
-      "n_points": 4920,
-      "mean_velocity": -3.08,
-      "max_subsidence": -68.7
-    },
-    {
-      "region": "Deutschland",
-      "n_points": 1418,
-      "mean_velocity": -4.54,
-      "max_subsidence": -63.1
-    },
-    {
-      "region": "Schleswig-Holstein",
-      "n_points": 6444,
-      "mean_velocity": -4.01,
-      "max_subsidence": -63.1
-    },
-    {
-      "region": "Hessen",
-      "n_points": 11768,
-      "mean_velocity": -4.02,
-      "max_subsidence": -59.9
+      "region": "Niedersachsen",
+      "n_points": 34583,
+      "mean_velocity": -3.58,
+      "max_subsidence": -120.7
     },
     {
       "region": "Bayern",
       "n_points": 13532,
       "mean_velocity": -3.47,
       "max_subsidence": -46.6
+    },
+    {
+      "region": "Mecklenburg-Vorpommern",
+      "n_points": 4972,
+      "mean_velocity": -3.07,
+      "max_subsidence": -68.7
     },
     {
       "region": "Berlin",
@@ -90,28 +96,10 @@
       "max_subsidence": -37.6
     },
     {
-      "region": "Bremen",
-      "n_points": 1155,
-      "mean_velocity": -4.02,
-      "max_subsidence": -30.6
-    },
-    {
-      "region": "Hamburg",
-      "n_points": 1864,
-      "mean_velocity": -3.98,
-      "max_subsidence": -27.6
-    },
-    {
       "region": "Saarland",
       "n_points": 290,
       "mean_velocity": -2.28,
-      "max_subsidence": -12.7
-    },
-    {
-      "region": "_all_points",
-      "n_points": 4,
-      "mean_velocity": -3.0,
-      "max_subsidence": -3.0
+      "max_subsidence": 13.2
     }
   ],
   "infrastructure_at_risk": {
