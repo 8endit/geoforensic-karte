@@ -183,12 +183,12 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
     <div class="eyebrow">Executive Lagebild</div>
     <div class="title">Deutschlands sinkende Infrastruktur</div>
   </div>
-  <span id="infra-state" class="state-pill">Infrastruktur: verfügbar</span>
+  <span id="infra-state" class="state-pill na">Infrastruktur: n/a</span>
   <div class="kpi-strip">
     <div class="kpi-chip"><span class="v cy" id="k-pts">—</span><span class="l">Messpunkte</span></div>
     <div class="kpi-chip"><span class="v rd" id="k-max">—</span><span class="l">Max mm/a</span></div>
     <div class="kpi-chip"><span class="v cy" id="k-reg">—</span><span class="l">Regionen</span></div>
-    <div class="kpi-chip"><span class="v" id="k-inf" style="color:var(--ora)">—</span><span class="l">Infrastr.</span></div>
+    <div class="kpi-chip"><span class="v cy" id="k-worst">—</span><span class="l">Worst mm/a</span></div>
   </div>
 </div>
 
@@ -256,7 +256,6 @@ function unpackMapData(d){
   };
 }
 let P=[],R=[];
-let TOTAL_INFRA=0;
 let aReg=new Set(),vMin=5,vMax=999;
 
 // -- Map --
@@ -277,11 +276,11 @@ map.on('moveend',()=>{clearTimeout(_moveTimer);_moveTimer=setTimeout(()=>{drawPt
 // Legend
 const lg=L.control({position:'bottomright'});
 lg.onAdd=function(){const d=L.DomUtil.create('div','legend-ctrl');
-d.innerHTML='<h4>Bodenbewegung (mm/Jahr)</h4><div class="grad"></div><div class="grad-l"><span>-5</span><span>-10</span><span>-15</span><span>-20+</span></div>';return d};
+d.innerHTML='<h4>Bodenbewegung (mm/Jahr)</h4><div class="grad"></div><div class="grad-l"><span>&plusmn;5</span><span>8</span><span>12</span><span>16+</span></div>';return d};
 lg.addTo(map);
 
 // Colors
-function vc(v){const a=Math.abs(v);if(v>0)return'#22d3ee';if(a<5)return'#22d3ee';if(a<8)return'#eab308';if(a<12)return'#f97316';if(a<16)return'#ef4444';return'#dc2626'}
+function vc(v){const a=Math.abs(v);if(a<5)return'#22d3ee';if(a<8)return'#eab308';if(a<12)return'#f97316';if(a<16)return'#ef4444';return'#dc2626'}
 function vr(v){return Math.min(9,Math.max(3,Math.abs(v)/2.5))}
 
 // Layers
@@ -292,7 +291,7 @@ let _filtCache=[];
 const MAX_MARKERS=8000;
 function drawPts(){
   ptL.clearLayers();
-  _filtCache=filt();
+  if(!_filtCache.length)_filtCache=filt();
   const z=map.getZoom();
   // At low zoom: only heatmap, no individual markers
   if(z<9){return}
@@ -350,15 +349,14 @@ function updKPI(){
   document.getElementById('k-max').textContent=m.toFixed(1);
   const visRegions=regSet.size;
   animNum(document.getElementById('k-reg'),visRegions);
-  animNum(document.getElementById('k-inf'),ic);
+  const worst=m.toFixed(1);
+  document.getElementById('k-worst').textContent=worst;
   const share=Math.round((f.length/Math.max(P.length,1))*100);
   const fs=document.getElementById('filter-summary');
   if(fs)fs.textContent=f.length.toLocaleString('de-DE')+' Punkte in '+visRegions+' Regionen sichtbar ('+share+'% des Datensatzes)';
-  const sp=document.getElementById('infra-state');
-  if(sp){sp.textContent='Infrastruktur: n/a';sp.classList.add('na')}
   const hint=document.getElementById('story-hint');
   if(hint){
-    if(!f.length){hint.textContent='Der aktuelle Filter zeigt keine kritischen Punkte. Reduziere die Min/Max-Schwelle oder aktiviere weitere Regionen.';return}
+    if(!f.length){hint.textContent='Keine Punkte sichtbar. Reduziere die Min-Schwelle oder aktiviere weitere Regionen.';return}
     let top=f[0];
     for(const p of f){if(Math.abs(p.v)>Math.abs(top.v))top=p}
     const mag=Math.abs(top.v).toFixed(1);
@@ -430,7 +428,8 @@ document.getElementById('search').addEventListener('input',function(){
         if(!d.length){document.getElementById('search-res').textContent='Nicht gefunden';return}
         const la=+d[0].lat,lo=+d[0].lon;map.flyTo([la,lo],12,{duration:1.2});
         let mn=Infinity,nr=null;
-        P.forEach(p=>{const dd=Math.sqrt((p.la-la)**2+(p.lo-lo)**2)*111;if(dd<mn){mn=dd;nr=p}});
+        const sp=_filtCache.length?_filtCache:P;
+        sp.forEach(p=>{const dd=Math.sqrt((p.la-la)**2+(p.lo-lo)**2)*111;if(dd<mn){mn=dd;nr=p}});
         document.getElementById('search-res').innerHTML=nr&&mn<80
           ?'&#8594; '+nr.v.toFixed(1)+' mm/a ('+mn.toFixed(1)+' km entfernt)'
           :d[0].display_name.split(',').slice(0,2).join(',');
@@ -453,7 +452,6 @@ fetch(MAP_DATA_URL).then(r=>{
 }).then(d=>{
   const u=unpackMapData(d);
   P=u.P;R=u.R;
-  TOTAL_INFRA=P.reduce((sum,p)=>sum+((p.i||[]).length),0);
   aReg=new Set(R.map(r=>r.name));
   buildRegs();buildRanks();
   setTimeout(()=>{apply();document.getElementById('loader').classList.add('done')},600);
