@@ -329,8 +329,8 @@ function drawHeat(){
   if(src.length>maxHeat){const step=Math.ceil(src.length/maxHeat);src=src.filter((_,i)=>i%step===0)}
   const d=src.map(p=>[p.la,p.lo,Math.abs(p.v)]);
   const r=z<8?25:z<10?20:15;
-  htL=L.heatLayer(d,{radius:r,blur:15,maxZoom:13,max:25,
-    gradient:{0.15:'#0c1445',0.3:'#22d3ee',0.5:'#eab308',0.7:'#f97316',1:'#ef4444'}}).addTo(map);
+  htL=L.heatLayer(d,{radius:r,blur:15,maxZoom:13,max:50,
+    gradient:{0.1:'#0c1445',0.2:'#22d3ee',0.35:'#eab308',0.55:'#f97316',0.75:'#ef4444',1:'#dc2626'}}).addTo(map);
 }
 
 // KPIs with count-up animation
