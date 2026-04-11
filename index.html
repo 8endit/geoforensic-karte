@@ -240,7 +240,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 <div id="map"></div>
 
 <script>
-const MAP_DATA_URL='geoforensic_map_data.json';
+const MAP_DATA_URL='geoforensic_map_data.json?v=20260411b';
 function unpackMapData(d){
   if(!d||d.v!==2)throw new Error('Ungültige Kartendaten');
   const nm=d.nm,inf=d.inf||[];
