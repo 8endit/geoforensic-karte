@@ -329,12 +329,21 @@ let ptL=L.layerGroup().addTo(map),htL=null,hc=null;
 const filt=()=>P.filter(p=>aReg.has(p.r)&&Math.abs(p.v)>=vMin&&Math.abs(p.v)<=vMax);
 
 let _filtCache=[];
+const MAX_MARKERS=8000;
 function drawPts(){
   ptL.clearLayers();
   _filtCache=filt();
+  const z=map.getZoom();
+  // At low zoom: only heatmap, no individual markers
+  if(z<9){return}
   const b=map.getBounds(),pad=0.05;
   const s=b.getSouth()-pad,n=b.getNorth()+pad,w=b.getWest()-pad,e=b.getEast()+pad;
-  const vis=_filtCache.filter(p=>p.la>=s&&p.la<=n&&p.lo>=w&&p.lo<=e);
+  let vis=_filtCache.filter(p=>p.la>=s&&p.la<=n&&p.lo>=w&&p.lo<=e);
+  // Subsample if too many points in view
+  if(vis.length>MAX_MARKERS){
+    const step=Math.ceil(vis.length/MAX_MARKERS);
+    vis=vis.filter((_,i)=>i%step===0);
+  }
   vis.forEach(p=>{
     const m=L.circleMarker([p.la,p.lo],{radius:vr(p.v),color:vc(p.v),fillColor:vc(p.v),
       fillOpacity:.8,weight:1.5,opacity:1});
@@ -353,7 +362,8 @@ function drawPts(){
 
 function drawHeat(){
   if(htL)map.removeLayer(htL);
-  const d=filt().map(p=>[p.la,p.lo,Math.abs(p.v)]);
+  const fc=_filtCache.length?_filtCache:filt();
+  const d=fc.map(p=>[p.la,p.lo,Math.abs(p.v)]);
   htL=L.heatLayer(d,{radius:20,blur:15,maxZoom:11,max:25,
     gradient:{0.15:'#0c1445',0.3:'#22d3ee',0.5:'#eab308',0.7:'#f97316',1:'#ef4444'}}).addTo(map);
 }
@@ -367,7 +377,7 @@ function animNum(el,target,suffix=''){
   requestAnimationFrame(step);
 }
 function updKPI(){
-  const f=filt(),vs=f.map(p=>p.v);
+  const f=_filtCache.length?_filtCache:filt(),vs=f.map(p=>p.v);
   animNum(document.getElementById('k-pts'),f.length);
   const m=vs.length?Math.min(...vs):0;
   document.getElementById('k-max').textContent=m.toFixed(1);
