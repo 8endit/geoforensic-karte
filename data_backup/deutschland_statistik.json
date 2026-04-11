@@ -1,0 +1,115 @@
+{
+  "total_critical_points": 28060,
+  "total_regions_scanned": 17,
+  "mean_velocity": -14.95,
+  "max_subsidence": -107.2,
+  "max_uplift": 29.8,
+  "region_ranking": [
+    {
+      "region": "Rheinisches-Revier",
+      "n_points": 20670,
+      "mean_velocity": -18.07,
+      "max_subsidence": -107.2
+    },
+    {
+      "region": "Erftstadt-Bruhl",
+      "n_points": 3048,
+      "mean_velocity": -8.81,
+      "max_subsidence": -79.6
+    },
+    {
+      "region": "Sondershausen",
+      "n_points": 542,
+      "mean_velocity": -6.36,
+      "max_subsidence": -106.7
+    },
+    {
+      "region": "Bottrop-Gladbeck",
+      "n_points": 465,
+      "mean_velocity": -6.15,
+      "max_subsidence": -33.2
+    },
+    {
+      "region": "Oberrhein-Freiburg",
+      "n_points": 23,
+      "mean_velocity": -6.03,
+      "max_subsidence": -20.4
+    },
+    {
+      "region": "Halle-Leipzig",
+      "n_points": 412,
+      "mean_velocity": -5.48,
+      "max_subsidence": -42.0
+    },
+    {
+      "region": "Ostsee-Luebeck",
+      "n_points": 151,
+      "mean_velocity": -5.35,
+      "max_subsidence": -40.8
+    },
+    {
+      "region": "Mansfeld",
+      "n_points": 216,
+      "mean_velocity": -4.89,
+      "max_subsidence": -29.3
+    },
+    {
+      "region": "Oberrhein-Karlsruhe",
+      "n_points": 219,
+      "mean_velocity": -4.74,
+      "max_subsidence": -45.3
+    },
+    {
+      "region": "Hamburg-Sued",
+      "n_points": 958,
+      "mean_velocity": -4.51,
+      "max_subsidence": -19.9
+    },
+    {
+      "region": "Nordsee-Kueste",
+      "n_points": 122,
+      "mean_velocity": -3.9,
+      "max_subsidence": -8.5
+    },
+    {
+      "region": "Ruhrgebiet-West",
+      "n_points": 140,
+      "mean_velocity": -3.63,
+      "max_subsidence": -33.3
+    },
+    {
+      "region": "Berlin-Spandau",
+      "n_points": 77,
+      "mean_velocity": -3.45,
+      "max_subsidence": -17.9
+    },
+    {
+      "region": "Bremen-Umland",
+      "n_points": 555,
+      "mean_velocity": -2.83,
+      "max_subsidence": -30.6
+    },
+    {
+      "region": "Ruhrgebiet-Ost",
+      "n_points": 331,
+      "mean_velocity": -0.9,
+      "max_subsidence": -19.7
+    },
+    {
+      "region": "Emsland",
+      "n_points": 126,
+      "mean_velocity": -0.75,
+      "max_subsidence": -19.3
+    },
+    {
+      "region": "Staufen-Breisgau",
+      "n_points": 5,
+      "mean_velocity": 5.82,
+      "max_subsidence": 3.3
+    }
+  ],
+  "infrastructure_at_risk": {
+    "totals": {},
+    "items": []
+  }
+}
