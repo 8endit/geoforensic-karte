@@ -35,8 +35,6 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 #topbar .title-wrap{display:flex;flex-direction:column;gap:2px}
 #topbar .eyebrow{font-size:10px;letter-spacing:2.1px;text-transform:uppercase;color:var(--dim);font-weight:700}
 #topbar .title{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.1px;line-height:1.1;color:#fff}
-#topbar .state-pill{border:1px solid rgba(61,214,198,.4);color:var(--cy);padding:6px 10px;border-radius:999px;
-  font-size:10px;text-transform:uppercase;letter-spacing:1.4px;font-weight:700;background:rgba(61,214,198,.08)}
 .kpi-strip{display:flex;gap:8px;margin-left:auto}
 .kpi-chip{background:rgba(255,255,255,.03);border:1px solid rgba(154,176,198,.24);border-radius:10px;
   padding:8px 14px;display:flex;flex-direction:column;align-items:center;min-width:102px}
@@ -155,7 +153,6 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 .count-up{transition:color .3s}
 
 /* ---- V2 overrides ---- */
-#topbar .state-pill.na{color:var(--ora);border-color:rgba(255,179,71,.45);background:rgba(255,179,71,.1)}
 #filter-summary{margin-top:10px;padding:8px 10px;border:1px solid rgba(154,176,198,.2);border-radius:9px;
   background:rgba(255,255,255,.02);font-size:11px;color:#d3dce8}
 #story-hint{margin-top:8px;font-size:11px;line-height:1.45;color:#aeb9ca}
@@ -180,7 +177,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
     <div class="eyebrow">Executive Lagebild</div>
     <div class="title">Deutschlands sinkende Infrastruktur</div>
   </div>
-  <span id="infra-state" class="state-pill na">Infrastruktur: n/a</span>
+
   <div class="kpi-strip">
     <div class="kpi-chip"><span class="v cy" id="k-pts">—</span><span class="l">Messpunkte</span></div>
     <div class="kpi-chip"><span class="v rd" id="k-max">—</span><span class="l">Max mm/a</span></div>
