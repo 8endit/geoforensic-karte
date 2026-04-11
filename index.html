@@ -157,6 +157,31 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 #loader p{margin-top:16px;font-size:13px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
 .count-up{transition:color .3s}
 
+/* ---- Mobile Responsive ---- */
+@media(max-width:768px){
+  #topbar{height:auto;min-height:52px;flex-wrap:wrap;padding:8px 12px;gap:8px}
+  #topbar .logo svg{width:22px;height:22px}
+  #topbar .logo span{font-size:10px}
+  #topbar .title-wrap{display:none}
+  #topbar .state-pill{display:none}
+  .kpi-strip{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .kpi-chip{min-width:72px;padding:4px 8px}
+  .kpi-chip .v{font-size:13px}
+  .kpi-chip .l{font-size:7px}
+  #lpanel{display:none}
+  #lpanel.mobile-open{display:flex;position:fixed;top:52px;left:0;right:0;bottom:0;width:100%;
+    z-index:200;background:rgba(6,9,15,.95);backdrop-filter:blur(20px);padding:12px;overflow-y:auto}
+  #bpanel{display:none}
+  #bpanel.mobile-open{display:flex;position:fixed;bottom:0;left:0;right:0;height:200px;z-index:200}
+  #tog-left{display:flex!important;position:fixed;top:56px;left:8px;z-index:210}
+  #tog-bottom{bottom:8px;right:8px}
+  .legend-ctrl{max-width:140px;padding:8px 10px!important;font-size:9px}
+  .legend-ctrl h4{font-size:7px}
+  .grad{width:100px}
+  #coords{display:none}
+  #scanline{display:none}
+}
+
 /* ---- V2 executive/editorial overrides ---- */
 :root{--cy:#3dd6c6;--cy2:#2d8f8a;--bg:#06090f;--panel:rgba(9,14,22,.76);
   --border:rgba(154,176,198,.16);--border2:rgba(61,214,198,.38);--txt:#e3e8ef;--dim:#8f9db1;
@@ -268,7 +293,7 @@ body{background:radial-gradient(1200px 700px at 72% 120%,rgba(61,214,198,.11),tr
 </div>
 
 <!-- Toggle buttons -->
-<button id="tog-left" onclick="document.getElementById('lpanel').classList.toggle('collapsed')">&#9654;</button>
+<button id="tog-left" onclick="let p=document.getElementById('lpanel');p.classList.toggle('collapsed');p.classList.toggle('mobile-open')">&#9776;</button>
 <button id="tog-bottom" onclick="let b=document.getElementById('bpanel');b.classList.toggle('collapsed');this.textContent=b.classList.contains('collapsed')?'&#9650;':'&#9660;'">&#9660;</button>
 
 <!-- Bottom panel -->
