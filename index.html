@@ -312,7 +312,8 @@ map.on('mousemove',e=>{
   c.style.opacity='1';
 });
 map.on('mouseout',()=>document.getElementById('coords').style.opacity='0');
-map.on('moveend',()=>{drawPts()});
+let _moveTimer;
+map.on('moveend',()=>{clearTimeout(_moveTimer);_moveTimer=setTimeout(()=>{drawPts()},150)});
 
 // Legend
 const lg=L.control({position:'bottomright'});
@@ -363,8 +364,14 @@ function drawPts(){
 function drawHeat(){
   if(htL)map.removeLayer(htL);
   const fc=_filtCache.length?_filtCache:filt();
-  const d=fc.map(p=>[p.la,p.lo,Math.abs(p.v)]);
-  htL=L.heatLayer(d,{radius:20,blur:15,maxZoom:11,max:25,
+  const z=map.getZoom();
+  // Subsample for heatmap: at low zoom visual difference is zero
+  const maxHeat=z<8?6000:z<10?15000:40000;
+  let src=fc;
+  if(src.length>maxHeat){const step=Math.ceil(src.length/maxHeat);src=src.filter((_,i)=>i%step===0)}
+  const d=src.map(p=>[p.la,p.lo,Math.abs(p.v)]);
+  const r=z<8?25:z<10?20:15;
+  htL=L.heatLayer(d,{radius:r,blur:15,maxZoom:13,max:25,
     gradient:{0.15:'#0c1445',0.3:'#22d3ee',0.5:'#eab308',0.7:'#f97316',1:'#ef4444'}}).addTo(map);
 }
 
@@ -377,13 +384,13 @@ function animNum(el,target,suffix=''){
   requestAnimationFrame(step);
 }
 function updKPI(){
-  const f=_filtCache.length?_filtCache:filt(),vs=f.map(p=>p.v);
+  const f=_filtCache.length?_filtCache:filt();
   animNum(document.getElementById('k-pts'),f.length);
-  const m=vs.length?Math.min(...vs):0;
+  let m=0,ic=0,regSet=new Set();
+  for(let i=0;i<f.length;i++){const p=f[i];if(p.v<m)m=p.v;ic+=(p.i||[]).length;regSet.add(p.r)}
   document.getElementById('k-max').textContent=m.toFixed(1);
-  const visRegions=new Set(f.map(p=>p.r)).size;
+  const visRegions=regSet.size;
   animNum(document.getElementById('k-reg'),visRegions);
-  let ic=0;f.forEach(p=>ic+=(p.i||[]).length);
   animNum(document.getElementById('k-inf'),ic);
   const share=Math.round((f.length/Math.max(P.length,1))*100);
   const fs=document.getElementById('filter-summary');
@@ -406,7 +413,7 @@ function updKPI(){
 
 // Histogram
 function drawHist(){
-  const f=filt(),bins=[0,0,0,0,0,0],lb=['3-5','5-8','8-12','12-20','20-50','50+'];
+  const f=_filtCache.length?_filtCache:filt(),bins=[0,0,0,0,0,0],lb=['3-5','5-8','8-12','12-20','20-50','50+'];
   f.forEach(p=>{const a=Math.abs(p.v);if(a<5)bins[0]++;else if(a<8)bins[1]++;else if(a<12)bins[2]++;
     else if(a<20)bins[3]++;else if(a<50)bins[4]++;else bins[5]++});
   if(hc)hc.destroy();
@@ -480,7 +487,8 @@ document.getElementById('rng-min').addEventListener('input',function(){
 document.getElementById('rng-max').addEventListener('input',function(){
   vMax=+this.value;document.getElementById('rv-max').textContent=vMax;apply()});
 
-function apply(){drawPts();drawHeat();updKPI();drawHist()}
+let _applyTimer;
+function apply(){clearTimeout(_applyTimer);_applyTimer=setTimeout(()=>{_filtCache=filt();drawPts();drawHeat();updKPI();drawHist()},100)}
 
 fetch(MAP_DATA_URL).then(r=>{
   if(!r.ok)throw new Error('HTTP '+r.status);
