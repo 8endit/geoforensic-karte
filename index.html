@@ -69,11 +69,12 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
   cursor:pointer;transition:all .15s;margin-bottom:2px;position:relative;overflow:hidden}
 .reg-item:hover{background:rgba(0,229,204,.06)}
 .reg-item .bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(255,71,87,.15),transparent);
-  transition:width .6s ease-out}
+  transition:width .6s ease-out;pointer-events:none;z-index:0}
 .reg-item input{accent-color:var(--cy);flex-shrink:0}
 .reg-item .nm{flex:1;font-size:12px;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .reg-item .ct{font-family:var(--mono);font-size:11px;color:var(--dim);z-index:1}
 .reg-item .vl{font-family:var(--mono);font-size:11px;font-weight:700;min-width:52px;text-align:right;z-index:1}
+.reg-item input,.reg-item .nm,.reg-item .ct,.reg-item .vl{position:relative}
 
 /* Velocity slider */
 .range-wrap{padding:4px 0}
@@ -158,9 +159,17 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 #story-hint{margin-top:8px;font-size:11px;line-height:1.45;color:#aeb9ca}
 
 #mob-handle{display:none}
+#mob-toggle{
+  display:none;position:fixed;right:12px;bottom:18px;z-index:10010;
+  height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--border2);
+  background:linear-gradient(180deg,rgba(11,17,26,.95),rgba(8,13,20,.9));
+  color:var(--cy);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  font-family:var(--mono);cursor:pointer
+}
 /* ---- Mobile ---- */
 @media(max-width:768px){
   body{overflow:auto;height:100vh}
+  #topbar{pointer-events:none}
   #topbar{height:auto;flex-wrap:wrap;padding:10px 12px;gap:8px}
   #topbar .title-wrap{display:none}
   .kpi-strip{gap:4px;width:100%;justify-content:space-between;order:2}
@@ -171,14 +180,18 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
   #lpanel,#lpanel.collapsed{position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;width:100%!important;
     height:50vh;z-index:100;flex-direction:column;gap:0;
     border-radius:18px 18px 0 0;overflow:hidden;
-    transform:translateY(calc(100% - 48px))!important;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+    transform:translateY(calc(100% - 48px))!important;transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
   #lpanel.mob-open,#lpanel.mob-open.collapsed{transform:translateY(0)!important}
+  #lpanel.mob-open{pointer-events:auto}
 
   #mob-handle{display:flex;align-items:center;justify-content:center;
-    height:48px;cursor:pointer;flex-shrink:0;
+    height:48px;cursor:pointer;flex-shrink:0;pointer-events:auto;
     background:linear-gradient(180deg,rgba(11,17,26,.95),rgba(8,13,20,.9));
     border-bottom:1px solid var(--border)}
-  #mob-handle .pill{width:36px;height:4px;border-radius:2px;background:rgba(154,176,198,.4)}
+  #mob-handle .pill{width:36px;height:4px;border-radius:2px;background:rgba(154,176,198,.4);margin-right:8px}
+  #mob-handle .txt{font-size:10px;letter-spacing:1.1px;color:#c9d4e3;font-family:var(--mono);text-transform:uppercase}
+  #mob-toggle{display:flex;align-items:center;justify-content:center}
+  #hits-badge{display:none}
 
   #lpanel .glass{border-radius:0;border-left:none;border-right:none;box-shadow:none}
   #lpanel .glass:first-child{border-top:none}
@@ -221,7 +234,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
 
 <!-- Left panel -->
 <div id="lpanel">
-  <div id="mob-handle" onclick="document.getElementById('lpanel').classList.toggle('mob-open')"><div class="pill"></div></div>
+  <div id="mob-handle" onclick="toggleMobilePanel()"><div class="pill"></div><div class="txt">Filter & Regionen</div></div>
   <!-- Search -->
   <div class="glass">
     <div style="padding:14px 16px">
@@ -253,6 +266,7 @@ body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
     <div class="panel-body" id="reg-list" style="flex:1;overflow-y:auto"></div>
   </div>
 </div>
+<button id="mob-toggle" onclick="toggleMobilePanel()">Filter</button>
 
 <!-- Toggle buttons -->
 <button id="tog-left" onclick="document.getElementById('lpanel').classList.toggle('collapsed')">&#9654;</button>
@@ -285,6 +299,8 @@ function unpackMapData(d){
 }
 let P=[],R=[];
 let aReg=new Set(),vMin=5,vMax=999;
+let mobilePanelOpen=false;
+const isMobile=()=>window.matchMedia('(max-width: 768px)').matches;
 
 // -- Map --
 const map=L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,renderer:L.canvas({padding:0.5})}).setView([51.1,10.3],6);
@@ -300,6 +316,7 @@ map.on('mousemove',e=>{
 map.on('mouseout',()=>document.getElementById('coords').style.opacity='0');
 let _moveTimer;
 map.on('moveend',()=>{clearTimeout(_moveTimer);_moveTimer=setTimeout(()=>{drawPts()},150)});
+map.on('click',()=>{if(isMobile()&&mobilePanelOpen)toggleMobilePanel(false)});
 
 // Legend
 const lg=L.control({position:'bottomright'});
@@ -476,6 +493,23 @@ document.getElementById('rng-min').addEventListener('input',function(){
 let _applyTimer;
 function apply(){clearTimeout(_applyTimer);_applyTimer=setTimeout(()=>{_filtCache=filt();drawPts();drawHeat();updKPI();drawHist()},100)}
 
+function syncMobilePanelUi(){
+  const p=document.getElementById('lpanel');
+  const b=document.getElementById('mob-toggle');
+  if(!p||!b)return;
+  p.classList.toggle('mob-open',mobilePanelOpen);
+  b.textContent=mobilePanelOpen?'Karte':'Filter';
+}
+function toggleMobilePanel(force){
+  if(!isMobile())return;
+  mobilePanelOpen=typeof force==='boolean'?force:!mobilePanelOpen;
+  syncMobilePanelUi();
+}
+window.addEventListener('resize',()=>{if(!isMobile()){mobilePanelOpen=false;syncMobilePanelUi()}});
+
+L.DomEvent.disableClickPropagation(document.getElementById('lpanel'));
+L.DomEvent.disableScrollPropagation(document.getElementById('lpanel'));
+
 fetch(MAP_DATA_URL).then(r=>{
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
@@ -490,7 +524,7 @@ fetch(MAP_DATA_URL).then(r=>{
   if(p)p.textContent='Laden fehlgeschlagen – Datei per Webserver öffnen oder Seite neu laden. ('+e.message+')';
 });
 </script>
-<div style="position:fixed;bottom:8px;right:8px;z-index:9999;opacity:0.6">
+<div id="hits-badge" style="position:fixed;bottom:8px;right:8px;z-index:9999;opacity:0.6">
 <a href="https://hits.sh/8endit.github.io/geoforensic-karte/">
 <img src="https://hits.sh/8endit.github.io/geoforensic-karte.svg?style=flat-square&label=views&color=0d7377&labelColor=080b12" alt="views"/>
 </a></div>
