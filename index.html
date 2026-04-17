@@ -1,531 +1,134 @@
 <!DOCTYPE html>
-<html lang="de"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GeoForensic — Deutschlands sinkende Infrastruktur</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-:root{--cy:#3dd6c6;--cy2:#2d8f8a;--bg:#06090f;--panel:rgba(9,14,22,.76);
-  --border:rgba(154,176,198,.16);--border2:rgba(61,214,198,.38);--txt:#e3e8ef;--dim:#8f9db1;
-  --red:#ff6171;--ora:#ffb347;--mono:'JetBrains Mono',monospace;--sans:'Manrope',system-ui,sans-serif;--serif:'Fraunces',serif}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--sans);color:var(--txt);overflow:hidden;height:100vh;
-  background:radial-gradient(1200px 700px at 72% 120%,rgba(61,214,198,.11),transparent 60%),
-  radial-gradient(1000px 650px at 15% -10%,rgba(255,97,113,.08),transparent 65%),var(--bg)}
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bodenbericht – Grundstücks-Screening in Minuten</title>
+  <meta name="description" content="Das GeoForensic-Projekt ist in Bodenbericht aufgegangen. Weiterleitung zu bodenbericht.de.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="canonical" href="https://bodenbericht.de/">
 
-/* ---- Full-bleed map ---- */
-#map{position:absolute;inset:0;z-index:0}
-.leaflet-control-zoom{display:none}
+  <!-- 3-Sekunden Auto-Redirect mit UTM-Tracking -->
+  <meta http-equiv="refresh" content="3; url=https://bodenbericht.de/?utm_source=geoforensic-karte&utm_medium=redirect&utm_campaign=legacy">
 
-/* ---- Scanline overlay ---- */
-#scanline{position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:linear-gradient(180deg,transparent 0%,rgba(255,255,255,.012) 55%,transparent 100%)}
-
-/* ---- Top bar ---- */
-#topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:72px;
-  background:linear-gradient(180deg,rgba(6,9,15,.94) 0%,rgba(6,9,15,.72) 100%);
-  backdrop-filter:blur(20px);border-bottom:1px solid rgba(154,176,198,.22);
-  display:flex;align-items:center;padding:0 20px;gap:18px}
-#topbar .logo{display:flex;align-items:center;gap:10px}
-#topbar .logo svg{width:28px;height:28px}
-#topbar .logo span{font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--cy)}
-#topbar .title-wrap{display:flex;flex-direction:column;gap:2px}
-#topbar .eyebrow{font-size:10px;letter-spacing:2.1px;text-transform:uppercase;color:var(--dim);font-weight:700}
-#topbar .title{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.1px;line-height:1.1;color:#fff}
-.kpi-strip{display:flex;gap:8px;margin-left:auto}
-.kpi-chip{background:rgba(255,255,255,.03);border:1px solid rgba(154,176,198,.24);border-radius:10px;
-  padding:8px 14px;display:flex;flex-direction:column;align-items:center;min-width:102px}
-.kpi-chip .v{font-family:var(--mono);font-size:17px;font-weight:700;color:#fff}
-.kpi-chip .v.cy{color:var(--cy)}.kpi-chip .v.rd{color:var(--red)}
-.kpi-chip .l{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin-top:2px}
-
-/* ---- Left panel (collapsible) ---- */
-#lpanel{position:fixed;top:84px;left:14px;bottom:12px;width:322px;z-index:90;
-  display:flex;flex-direction:column;gap:8px;transition:transform .4s cubic-bezier(.4,0,.2,1)}
-#lpanel.collapsed{transform:translateX(-312px)}
-.glass{background:linear-gradient(180deg,rgba(11,17,26,.82),rgba(8,13,20,.77));backdrop-filter:blur(24px);
-  border:1px solid rgba(154,176,198,.18);border-radius:14px;overflow:hidden;box-shadow:0 18px 38px rgba(0,0,0,.26)}
-.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
-  border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
-.panel-head h3{font-size:10px;text-transform:uppercase;letter-spacing:2.5px;color:var(--dim);font-weight:600}
-.panel-head .arrow{color:var(--dim);font-size:10px;transition:transform .2s}
-.panel-head.open .arrow{transform:rotate(180deg)}
-.panel-body{padding:12px 16px;max-height:400px;overflow-y:auto}
-.panel-body::-webkit-scrollbar{width:3px}.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-/* Search */
-#search{width:100%;background:rgba(0,229,204,.04);border:1px solid var(--border);border-radius:8px;
-  padding:10px 12px 10px 36px;color:#fff;font-size:13px;font-family:var(--sans);outline:none;transition:all .2s}
-#search:focus{border-color:var(--cy);box-shadow:0 0 20px rgba(0,229,204,.1)}
-#search-wrap{position:relative}
-#search-wrap svg{position:absolute;left:11px;top:11px;width:16px;height:16px;color:var(--dim)}
-#search-res{font-size:11px;color:var(--dim);margin-top:6px;min-height:14px;font-family:var(--mono)}
-
-/* Region list */
-.reg-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
-  cursor:pointer;transition:all .15s;margin-bottom:2px;position:relative;overflow:hidden}
-.reg-item:hover{background:rgba(0,229,204,.06)}
-.reg-item .bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(255,71,87,.15),transparent);
-  transition:width .6s ease-out;pointer-events:none;z-index:0}
-.reg-item input{accent-color:var(--cy);flex-shrink:0}
-.reg-item .nm{flex:1;font-size:12px;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reg-item .ct{font-family:var(--mono);font-size:11px;color:var(--dim);z-index:1}
-.reg-item .vl{font-family:var(--mono);font-size:11px;font-weight:700;min-width:52px;text-align:right;z-index:1}
-.reg-item input,.reg-item .nm,.reg-item .ct,.reg-item .vl{position:relative}
-
-/* Velocity slider */
-.range-wrap{padding:4px 0}
-.range-row{display:flex;align-items:center;gap:6px;margin:4px 0}
-.range-row label{font-size:10px;color:var(--dim);width:28px;text-transform:uppercase}
-.range-row input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;
-  background:linear-gradient(90deg,var(--cy2),var(--red));outline:none}
-.range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
-  border-radius:50%;background:var(--cy);border:2px solid var(--bg);cursor:pointer;box-shadow:0 0 10px rgba(0,229,204,.3)}
-.range-row .rv{font-family:var(--mono);font-size:11px;color:var(--cy);width:36px;text-align:right}
-
-/* ---- Bottom panel ---- */
-#bpanel{position:fixed;bottom:12px;left:324px;right:12px;z-index:90;
-  display:flex;gap:8px;height:160px;transition:transform .4s cubic-bezier(.4,0,.2,1)}
-#bpanel.collapsed{transform:translateY(172px)}
-#lpanel.collapsed~#bpanel{left:12px}
-
-/* Ranking cards */
-.rank-card{flex-shrink:0;width:180px;padding:14px;cursor:pointer;transition:all .2s;
-  display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
-.rank-card:hover{border-color:var(--cy);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,229,204,.1)}
-.rank-card .rank-n{font-family:var(--mono);font-size:48px;font-weight:700;line-height:1;
-  position:absolute;right:12px;bottom:8px;opacity:.06}
-.rank-card .rname{font-size:12px;font-weight:600;color:#fff}
-.rank-card .rvel{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:4px}
-.rank-card .rmeta{font-size:10px;color:var(--dim);margin-top:auto;font-family:var(--mono)}
-
-/* Chart panel */
-#chart-panel{flex:1;min-width:200px}
-#chart-panel .panel-body{height:108px;padding:8px 16px}
-
-/* ---- Legend ---- */
-.legend-ctrl{background:var(--panel)!important;backdrop-filter:blur(24px);border:1px solid var(--border)!important;
-  border-radius:10px!important;padding:14px 16px!important;color:var(--txt)}
-.legend-ctrl h4{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);margin:0 0 8px;font-family:var(--sans)}
-.grad{width:160px;height:8px;border-radius:4px;
-  background:linear-gradient(90deg,#22d3ee 0%,#eab308 30%,#f97316 55%,#ef4444 75%,#dc2626 100%)}
-.grad-l{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:4px}
-
-/* ---- Popup ---- */
-.leaflet-popup-content-wrapper{background:var(--panel)!important;backdrop-filter:blur(24px)!important;
-  color:var(--txt)!important;border:1px solid var(--border2)!important;border-radius:12px!important;
-  box-shadow:0 20px 60px rgba(0,0,0,.6)!important}
-.leaflet-popup-tip{background:var(--panel)!important}
-.leaflet-popup-content{margin:14px 16px!important;font-family:var(--sans)}
-.p-vel{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-1px}
-.p-sub{font-size:11px;color:var(--dim);margin-top:2px;font-family:var(--mono)}
-.p-reg{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:4px;font-size:10px;
-  background:rgba(0,229,204,.08);border:1px solid var(--border);color:var(--cy)}
-.p-infra{margin-top:10px;font-size:11px;list-style:none}.p-infra li{padding:3px 0;color:var(--dim);
-  border-bottom:1px solid var(--border)}.p-infra li:last-child{border:none}
-.p-infra .it{color:var(--cy);font-weight:500}
-
-/* ---- Toggle btn ---- */
-#tog-left{position:fixed;top:68px;left:12px;z-index:95;width:32px;height:32px;border-radius:8px;
-  background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--cy);
-  cursor:pointer;display:none;align-items:center;justify-content:center;font-size:14px;transition:all .2s}
-#tog-left:hover{background:rgba(0,229,204,.1)}
-#lpanel.collapsed~#tog-left{display:flex}
-#tog-bottom{position:fixed;bottom:12px;right:12px;z-index:95;width:32px;height:32px;border-radius:8px;
-  background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);color:var(--cy);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
-
-/* ---- Coord display ---- */
-#coords{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:80;
-  font-family:var(--mono);font-size:11px;color:var(--dim);
-  background:var(--panel);backdrop-filter:blur(16px);border:1px solid var(--border);
-  border-radius:6px;padding:4px 12px;pointer-events:none;opacity:0;transition:opacity .3s}
-
-/* ---- Loading ---- */
-#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;transition:opacity .6s}
-#loader.done{opacity:0;pointer-events:none}
-#loader svg{width:48px;height:48px;animation:spin 2s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loader p{margin-top:16px;font-size:13px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
-.count-up{transition:color .3s}
-
-/* ---- V2 overrides ---- */
-#filter-summary{margin-top:10px;padding:8px 10px;border:1px solid rgba(154,176,198,.2);border-radius:9px;
-  background:rgba(255,255,255,.02);font-size:11px;color:#d3dce8}
-#story-hint{margin-top:8px;font-size:11px;line-height:1.45;color:#aeb9ca}
-
-#mob-handle{display:none}
-#mob-toggle{
-  display:none;position:fixed;right:12px;bottom:18px;z-index:10010;
-  height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--border2);
-  background:linear-gradient(180deg,rgba(11,17,26,.95),rgba(8,13,20,.9));
-  color:var(--cy);font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-  font-family:var(--mono);cursor:pointer
-}
-/* ---- Mobile ---- */
-@media(max-width:768px){
-  body{overflow:auto;height:100vh}
-  #topbar{pointer-events:none}
-  #topbar{height:auto;flex-wrap:wrap;padding:10px 12px;gap:8px}
-  #topbar .title-wrap{display:none}
-  .kpi-strip{gap:4px;width:100%;justify-content:space-between;order:2}
-  .kpi-chip{min-width:0;flex:1;padding:6px 4px}
-  .kpi-chip .v{font-size:13px}
-  .kpi-chip .l{font-size:7px;letter-spacing:.8px}
-
-  #lpanel,#lpanel.collapsed{position:fixed!important;top:auto!important;bottom:0!important;left:0!important;right:0!important;width:100%!important;
-    height:50vh;z-index:100;flex-direction:column;gap:0;
-    border-radius:18px 18px 0 0;overflow:hidden;
-    transform:translateY(calc(100% - 48px))!important;transition:transform .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
-  #lpanel.mob-open,#lpanel.mob-open.collapsed{transform:translateY(0)!important}
-  #lpanel.mob-open{pointer-events:auto}
-
-  #mob-handle{display:flex;align-items:center;justify-content:center;
-    height:48px;cursor:pointer;flex-shrink:0;pointer-events:auto;
-    background:linear-gradient(180deg,rgba(11,17,26,.95),rgba(8,13,20,.9));
-    border-bottom:1px solid var(--border)}
-  #mob-handle .pill{width:36px;height:4px;border-radius:2px;background:rgba(154,176,198,.4);margin-right:8px}
-  #mob-handle .txt{font-size:10px;letter-spacing:1.1px;color:#c9d4e3;font-family:var(--mono);text-transform:uppercase}
-  #mob-toggle{display:flex;align-items:center;justify-content:center}
-  #hits-badge{display:none}
-
-  #lpanel .glass{border-radius:0;border-left:none;border-right:none;box-shadow:none}
-  #lpanel .glass:first-child{border-top:none}
-  .panel-body{max-height:200px}
-
-  #bpanel{display:none}
-  #tog-left,#tog-bottom{display:none!important}
-  #coords{display:none}
-  .legend-ctrl{display:none!important}
-}
-</style>
-</head><body>
-
-<!-- Loader -->
-<div id="loader">
-  <svg viewBox="0 0 24 24" fill="none" stroke="var(--cy)" stroke-width="1.5"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
-  <p>Satellitendaten werden geladen</p>
-</div>
-
-<div id="scanline"></div>
-
-<!-- Top bar -->
-<div id="topbar">
-  <div class="logo">
-    <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="var(--cy)" stroke-width="1.5" opacity=".3"/><circle cx="16" cy="16" r="8" stroke="var(--cy)" stroke-width="1"/><circle cx="16" cy="16" r="2" fill="var(--cy)"/><line x1="16" y1="2" x2="16" y2="6" stroke="var(--cy)" stroke-width="1"/><line x1="16" y1="26" x2="16" y2="30" stroke="var(--cy)" stroke-width="1"/><line x1="2" y1="16" x2="6" y2="16" stroke="var(--cy)" stroke-width="1"/><line x1="26" y1="16" x2="30" y2="16" stroke="var(--cy)" stroke-width="1"/></svg>
-    <span>GeoForensic</span>
-  </div>
-  <div class="title-wrap">
-    <div class="eyebrow">Executive Lagebild</div>
-    <div class="title">Deutschlands sinkende Infrastruktur</div>
-  </div>
-
-  <div class="kpi-strip">
-    <div class="kpi-chip"><span class="v cy" id="k-pts">—</span><span class="l">Messpunkte</span></div>
-    <div class="kpi-chip"><span class="v rd" id="k-max">—</span><span class="l">Max mm/a</span></div>
-    <div class="kpi-chip"><span class="v cy" id="k-reg">—</span><span class="l">Regionen</span></div>
-    <div class="kpi-chip"><span class="v" id="k-med" style="color:var(--ora)">—</span><span class="l">Median</span></div>
-  </div>
-</div>
-
-<!-- Left panel -->
-<div id="lpanel">
-  <div id="mob-handle" onclick="toggleMobilePanel()"><div class="pill"></div><div class="txt">Filter & Regionen</div></div>
-  <!-- Search -->
-  <div class="glass">
-    <div style="padding:14px 16px">
-      <div id="search-wrap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="search" placeholder="Adresse suchen...">
-      </div>
-      <div id="search-res"></div>
-    </div>
-  </div>
-
-  <!-- Velocity filter -->
-  <div class="glass">
-    <div class="panel-head open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
-      <h3>Velocity Filter</h3><span class="arrow">&#9660;</span>
-    </div>
-    <div class="panel-body range-wrap">
-      <div class="range-row"><label>Min (mm/a)</label><input type="range" id="rng-min" min="0" max="10" value="2" step="1"><span class="rv" id="rv-min">5</span></div>
-      <div id="filter-summary">Lade Sichtbarkeitszusammenfassung ...</div>
-      <div id="story-hint"></div>
-    </div>
-  </div>
-
-  <!-- Regions -->
-  <div class="glass" style="flex:1;min-height:0;display:flex;flex-direction:column">
-    <div class="panel-head open" onclick="this.classList.toggle('open');this.nextElementSibling.style.display=this.classList.contains('open')?'block':'none'">
-      <h3>Regionen</h3><span class="arrow">&#9660;</span>
-    </div>
-    <div class="panel-body" id="reg-list" style="flex:1;overflow-y:auto"></div>
-  </div>
-</div>
-<button id="mob-toggle" onclick="toggleMobilePanel()">Filter</button>
-
-<!-- Toggle buttons -->
-<button id="tog-left" onclick="document.getElementById('lpanel').classList.toggle('collapsed')">&#9654;</button>
-<button id="tog-bottom" onclick="let b=document.getElementById('bpanel');b.classList.toggle('collapsed');this.textContent=b.classList.contains('collapsed')?'&#9650;':'&#9660;'">&#9660;</button>
-
-<!-- Bottom panel -->
-<div id="bpanel">
-  <div id="rank-strip" style="display:flex;gap:8px;overflow-x:auto;flex:1;padding-bottom:4px"></div>
-  <div class="glass" id="chart-panel" style="width:280px;flex-shrink:0">
-    <div class="panel-head"><h3>Verteilung</h3></div>
-    <div class="panel-body"><canvas id="hchart"></canvas></div>
-  </div>
-</div>
-
-<!-- Coordinate display -->
-<div id="coords"></div>
-
-<!-- Map -->
-<div id="map"></div>
-
-<script>
-const MAP_DATA_URL='geoforensic_map_data.json?v=20260411b';
-function unpackMapData(d){
-  if(!d||d.v!==2)throw new Error('Ungültige Kartendaten');
-  const nm=d.nm,inf=d.inf||[];
-  return{
-    P:d.p.map((row,i)=>({la:row[0],lo:row[1],v:row[2],r:nm[row[3]],i:inf[i]||[]})),
-    R:d.R
-  };
-}
-let P=[],R=[];
-let aReg=new Set(),vMin=5,vMax=999;
-let mobilePanelOpen=false;
-const isMobile=()=>window.matchMedia('(max-width: 768px)').matches;
-
-// -- Map --
-const map=L.map('map',{zoomControl:false,attributionControl:false,preferCanvas:true,renderer:L.canvas({padding:0.5})}).setView([51.1,10.3],6);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',{maxZoom:18}).addTo(map);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png',{maxZoom:18,pane:'overlayPane'}).addTo(map);
-
-// Coord display
-map.on('mousemove',e=>{
-  const c=document.getElementById('coords');
-  c.textContent=e.latlng.lat.toFixed(4)+' N, '+e.latlng.lng.toFixed(4)+' E';
-  c.style.opacity='1';
-});
-map.on('mouseout',()=>document.getElementById('coords').style.opacity='0');
-let _moveTimer;
-map.on('moveend',()=>{clearTimeout(_moveTimer);_moveTimer=setTimeout(()=>{drawPts()},150)});
-map.on('click',()=>{if(isMobile()&&mobilePanelOpen)toggleMobilePanel(false)});
-
-// Legend
-const lg=L.control({position:'bottomright'});
-lg.onAdd=function(){const d=L.DomUtil.create('div','legend-ctrl');
-d.innerHTML='<h4>Bodenbewegung (mm/Jahr)</h4><div class="grad"></div><div class="grad-l"><span>&plusmn;5</span><span>8</span><span>12</span><span>16+</span></div>';return d};
-lg.addTo(map);
-
-// Colors
-function vc(v){const a=Math.abs(v);if(a<5)return'#22d3ee';if(a<8)return'#eab308';if(a<12)return'#f97316';if(a<16)return'#ef4444';return'#dc2626'}
-function vr(v){return Math.min(9,Math.max(3,Math.abs(v)/2.5))}
-
-// Layers
-let ptL=L.layerGroup().addTo(map),htL=null,hc=null;
-const filt=()=>P.filter(p=>aReg.has(p.r)&&Math.abs(p.v)>=vMin&&Math.abs(p.v)<=vMax);
-
-let _filtCache=[];
-const MAX_MARKERS=8000;
-function drawPts(){
-  ptL.clearLayers();
-  if(!_filtCache.length)_filtCache=filt();
-  const z=map.getZoom();
-  // At low zoom: only heatmap, no individual markers
-  if(z<9){return}
-  const b=map.getBounds(),pad=0.05;
-  const s=b.getSouth()-pad,n=b.getNorth()+pad,w=b.getWest()-pad,e=b.getEast()+pad;
-  let vis=_filtCache.filter(p=>p.la>=s&&p.la<=n&&p.lo>=w&&p.lo<=e);
-  // Subsample if too many points in view
-  if(vis.length>MAX_MARKERS){
-    vis.sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
-    vis=vis.slice(0,MAX_MARKERS);
-  }
-  vis.forEach(p=>{
-    const m=L.circleMarker([p.la,p.lo],{radius:vr(p.v),color:vc(p.v),fillColor:vc(p.v),
-      fillOpacity:.8,weight:1.5,opacity:1});
-    m.on('click',()=>{
-      let ih='';
-      if(p.i&&p.i.length){ih='<ul class="p-infra">'+p.i.map(x=>'<li><span class="it">'+x.t+'</span> '+
-        (x.n||'unbenannt')+' <span style="color:var(--dim)">('+x.d+'m)</span></li>').join('')+'</ul>'}
-      const pp='<div class="p-vel" style="color:'+vc(p.v)+'">'+(p.v>0?'+':'')+p.v.toFixed(1)+' mm/a</div>'
-        +'<div class="p-sub">'+p.la.toFixed(4)+' N, '+p.lo.toFixed(4)+' E</div>'
-        +'<div class="p-reg">'+p.r+'</div>'+ih;
-      m.bindPopup(pp,{maxWidth:280}).openPopup();
-    });
-    m.addTo(ptL);
-  });
-}
-
-function drawHeat(){
-  if(htL)map.removeLayer(htL);
-  const fc=_filtCache.length?_filtCache:filt();
-  const z=map.getZoom();
-  // Subsample for heatmap: at low zoom visual difference is zero
-  const maxHeat=z<8?6000:z<10?15000:40000;
-  let src=fc;
-  if(src.length>maxHeat){const step=Math.ceil(src.length/maxHeat);src=src.filter((_,i)=>i%step===0)}
-  const d=src.map(p=>[p.la,p.lo,Math.abs(p.v)]);
-  const r=z<8?25:z<10?20:15;
-  htL=L.heatLayer(d,{radius:r,blur:15,maxZoom:13,max:50,
-    gradient:{0.1:'#0c1445',0.2:'#22d3ee',0.35:'#eab308',0.55:'#f97316',0.75:'#ef4444',1:'#dc2626'}}).addTo(map);
-}
-
-// KPIs with count-up animation
-function animNum(el,target,suffix=''){
-  const start=parseInt(el.textContent)||0;const dur=800;const t0=performance.now();
-  function step(t){const p=Math.min((t-t0)/dur,1);const eased=1-Math.pow(1-p,3);
-    el.textContent=(suffix==='.'?((start+(target-start)*eased)).toFixed(1):Math.round(start+(target-start)*eased).toLocaleString('de-DE'))+suffix;
-    if(p<1)requestAnimationFrame(step)}
-  requestAnimationFrame(step);
-}
-function updKPI(){
-  const f=_filtCache.length?_filtCache:filt();
-  animNum(document.getElementById('k-pts'),f.length);
-  let m=0,ic=0,regSet=new Set();
-  for(let i=0;i<f.length;i++){const p=f[i];if(p.v<m)m=p.v;ic+=(p.i||[]).length;regSet.add(p.r)}
-  document.getElementById('k-max').textContent=m.toFixed(1);
-  const visRegions=regSet.size;
-  animNum(document.getElementById('k-reg'),visRegions);
-  // Median velocity
-  if(f.length){const sv=f.map(p=>Math.abs(p.v)).sort((a,b)=>a-b);document.getElementById('k-med').textContent=sv[Math.floor(sv.length/2)].toFixed(1)}
-  else{document.getElementById('k-med').textContent='—'}
-  const share=Math.round((f.length/Math.max(P.length,1))*100);
-  const fs=document.getElementById('filter-summary');
-  if(fs)fs.textContent=f.length.toLocaleString('de-DE')+' Punkte in '+visRegions+' Regionen sichtbar ('+share+'% des Datensatzes)';
-  const hint=document.getElementById('story-hint');
-  if(hint){
-    if(!f.length){hint.textContent='Keine Punkte sichtbar. Reduziere die Min-Schwelle oder aktiviere weitere Regionen.';return}
-    let top=f[0];
-    for(const p of f){if(Math.abs(p.v)>Math.abs(top.v))top=p}
-    const mag=Math.abs(top.v).toFixed(1);
-    hint.textContent='Stärkster Hotspot im aktuellen Blick: '+top.r+' mit '+mag+' mm/a. '
-      +(top.v<0?'Schwerpunkt liegt auf Absenkung.':'Schwerpunkt liegt auf Hebung.');
-  }
-}
-
-// Histogram
-function drawHist(){
-  const f=_filtCache.length?_filtCache:filt(),bins=[0,0,0,0,0,0],lb=[vMin+'-8','8-12','12-20','20-30','30-50','50+'];
-  f.forEach(p=>{const a=Math.abs(p.v);if(a<8)bins[0]++;else if(a<12)bins[1]++;else if(a<20)bins[2]++;
-    else if(a<30)bins[3]++;else if(a<50)bins[4]++;else bins[5]++});
-  if(hc)hc.destroy();
-  hc=new Chart(document.getElementById('hchart'),{type:'bar',
-    data:{labels:lb,datasets:[{data:bins,backgroundColor:['#eab308','#f97316','#ef4444','#dc2626','#991b1b','#7f1d1d'],
-      borderWidth:0,borderRadius:4,barThickness:16}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false},ticks:{color:'#4a5568',font:{size:10,family:'JetBrains Mono'}}},
-        y:{grid:{color:'rgba(0,229,204,.05)'},ticks:{color:'#4a5568',font:{size:10,family:'JetBrains Mono'}}}}
+  <style>
+    :root {
+      --brand-dark: #15803d;
+      --brand: #16a34a;
+      --navy-900: #0c1d3a;
+      --navy-800: #122b52;
+      --text: #1f2937;
+      --text-muted: #6b7280;
+      --bg: #f8fafc;
     }
-  });
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background:
+        radial-gradient(1200px 700px at 72% 120%, rgba(22, 163, 74, 0.09), transparent 60%),
+        radial-gradient(1000px 650px at 15% -10%, rgba(18, 43, 82, 0.05), transparent 65%),
+        var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .logo {
+      display: block;
+      max-width: 380px;
+      width: 100%;
+      height: auto;
+      margin: 0 auto 32px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    p.lead {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px -6px rgba(22, 163, 74, 0.45);
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .cta:hover {
+      background: var(--brand-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px -6px rgba(22, 163, 74, 0.55);
+    }
+    .cta svg { width: 18px; height: 18px; }
+    .redirect-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 24px;
+    }
+    .countdown {
+      display: inline-block;
+      min-width: 1ch;
+      font-variant-numeric: tabular-nums;
+      color: var(--brand);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="images/logo-horizontal.png"
+         alt="Bodenbericht – digitale Bodenbewertung"
+         width="513" height="160">
 
-// Region list
-function buildRegs(){
-  const el=document.getElementById('reg-list');el.innerHTML='';
-  R.sort((a,b)=>a.mean-b.mean);// worst (most negative) first
-  const maxN=Math.max(...R.map(r=>r.n));
-  R.forEach(r=>{
-    const c=vc(r.mean);const pct=Math.round(r.n/maxN*100);
-    el.innerHTML+='<label class="reg-item" onclick="flyR(\''+r.name+'\')">'
-      +'<div class="bar" style="width:'+pct+'%"></div>'
-      +'<input type="checkbox" checked onchange="togR(\''+r.name+'\',this.checked);event.stopPropagation()">'
-      +'<span class="nm">'+r.name+'</span>'
-      +'<span class="vl" style="color:'+c+'">'+r.mean.toFixed(1)+'</span>'
-      +'<span class="ct">'+r.n+'</span></label>';
-  });
-}
+    <h1>Dieses Projekt ist in bodenbericht.de aufgegangen.</h1>
+    <p class="lead">
+      Das automatisierte Grundstücks-Screening auf Basis offizieller EU-Satellitendaten
+      (Copernicus EGMS, LUCAS, SoilGrids) läuft ab sofort unter einer neuen Adresse.
+    </p>
 
-// Rank cards
-function buildRanks(){
-  const el=document.getElementById('rank-strip');el.innerHTML='';
-  R.forEach((r,i)=>{
-    const c=vc(r.mean);
-    el.innerHTML+='<div class="glass rank-card" onclick="flyR(\''+r.name+'\')">'
-      +'<div class="rank-n">#'+(i+1)+'</div>'
-      +'<div class="rname">'+r.name+'</div>'
-      +'<div class="rvel" style="color:'+c+'">'+r.mean.toFixed(1)+'<span style="font-size:12px;font-weight:400"> mm/a</span></div>'
-      +'<div class="rmeta">'+r.n+' Punkte &middot; worst '+r.worst.toFixed(1)+'</div></div>';
-  });
-}
+    <a class="cta" href="https://bodenbericht.de/?utm_source=geoforensic-karte&amp;utm_medium=redirect&amp;utm_campaign=legacy">
+      Jetzt zu bodenbericht.de
+      <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+    </a>
 
-function flyR(name){
-  const r=R.find(x=>x.name===name);
-  if(r&&r.bb)map.flyToBounds([[r.bb[0],r.bb[1]],[r.bb[2],r.bb[3]]],{padding:[80,80],duration:1.2});
-}
-function togR(name,on){if(on)aReg.add(name);else aReg.delete(name);apply()}
+    <p class="redirect-note">
+      Automatische Weiterleitung in <span class="countdown" id="countdown">3</span>&nbsp;Sekunden.
+    </p>
+  </main>
 
-// Search
-let sT;
-document.getElementById('search').addEventListener('input',function(){
-  clearTimeout(sT);const q=this.value.trim();
-  if(q.length<3){document.getElementById('search-res').textContent='';return}
-  sT=setTimeout(()=>{
-    fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=de&limit=1&q='+encodeURIComponent(q))
-      .then(r=>r.json()).then(d=>{
-        if(!d.length){document.getElementById('search-res').textContent='Nicht gefunden';return}
-        const la=+d[0].lat,lo=+d[0].lon;map.flyTo([la,lo],12,{duration:1.2});
-        let mn=Infinity,nr=null;
-        const sp=_filtCache.length?_filtCache:P;
-        const cosLat=Math.cos(la*Math.PI/180);
-        sp.forEach(p=>{const dlat=(p.la-la)*111,dlon=(p.lo-lo)*111*cosLat;const dd=Math.sqrt(dlat*dlat+dlon*dlon);if(dd<mn){mn=dd;nr=p}});
-        document.getElementById('search-res').innerHTML=nr&&mn<80
-          ?'&#8594; '+nr.v.toFixed(1)+' mm/a ('+mn.toFixed(1)+' km entfernt)'
-          :d[0].display_name.split(',').slice(0,2).join(',');
-      }).catch(()=>{});
-  },500);
-});
-
-// Sliders
-const VSTEPS=[3,4,5,6,8,10,15,20,30,50,80];
-document.getElementById('rng-min').value=2;// sync with vMin=5 default (VSTEPS[2])
-document.getElementById('rng-min').addEventListener('input',function(){
-  vMin=VSTEPS[+this.value]||3;document.getElementById('rv-min').textContent=vMin;apply()});
-
-let _applyTimer;
-function apply(){clearTimeout(_applyTimer);_applyTimer=setTimeout(()=>{_filtCache=filt();drawPts();drawHeat();updKPI();drawHist()},100)}
-
-function syncMobilePanelUi(){
-  const p=document.getElementById('lpanel');
-  const b=document.getElementById('mob-toggle');
-  if(!p||!b)return;
-  p.classList.toggle('mob-open',mobilePanelOpen);
-  b.textContent=mobilePanelOpen?'Karte':'Filter';
-}
-function toggleMobilePanel(force){
-  if(!isMobile())return;
-  mobilePanelOpen=typeof force==='boolean'?force:!mobilePanelOpen;
-  syncMobilePanelUi();
-}
-window.addEventListener('resize',()=>{if(!isMobile()){mobilePanelOpen=false;syncMobilePanelUi()}});
-
-L.DomEvent.disableClickPropagation(document.getElementById('lpanel'));
-L.DomEvent.disableScrollPropagation(document.getElementById('lpanel'));
-
-fetch(MAP_DATA_URL).then(r=>{
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
-}).then(d=>{
-  const u=unpackMapData(d);
-  P=u.P;R=u.R;
-  aReg=new Set(R.map(r=>r.name));
-  buildRegs();buildRanks();
-  setTimeout(()=>{apply();document.getElementById('loader').classList.add('done')},600);
-}).catch(e=>{
-  const p=document.querySelector('#loader p');
-  if(p)p.textContent='Laden fehlgeschlagen – Datei per Webserver öffnen oder Seite neu laden. ('+e.message+')';
-});
-</script>
-<div id="hits-badge" style="position:fixed;bottom:8px;right:8px;z-index:9999;opacity:0.6">
-<a href="https://hits.sh/8endit.github.io/geoforensic-karte/">
-<img src="https://hits.sh/8endit.github.io/geoforensic-karte.svg?style=flat-square&label=views&color=0d7377&labelColor=080b12" alt="views"/>
-</a></div>
-</body></html>
+  <script>
+    // Countdown UI — meta-refresh macht die eigentliche Weiterleitung
+    let s = 3;
+    const el = document.getElementById('countdown');
+    const t = setInterval(() => {
+      s -= 1;
+      if (el) el.textContent = Math.max(0, s);
+      if (s <= 0) clearInterval(t);
+    }, 1000);
+  </script>
+</body>
+</html>
